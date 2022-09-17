@@ -10,7 +10,7 @@ namespace TweetSearch.Core
         private readonly string tweeterRecentSearchEndpoint = "https://api.twitter.com/2/tweets/search/recent?query= ";
         private readonly string pastSearchesFilePath = "PastSearches\\PastSearches.txt";
 
-
+        // POST /tweets 
         public async Task<string> ProcessRequest(RequestData requestData)
         {
             string query = BuildQuery(requestData);
@@ -23,9 +23,10 @@ namespace TweetSearch.Core
 
             ProcessResponse(requestData, response);
 
-            return result;
+            return "ok";
         }
 
+        // Build the search query to be sent to Twitter
         private string BuildQuery(RequestData requestData)
         {
             string query = tweeterRecentSearchEndpoint;
@@ -36,6 +37,7 @@ namespace TweetSearch.Core
             return query;
         }
 
+        // Send the request to Twitter and get response
         private async Task<string> SendRequest(string query)
         {
             var request = new HttpRequestMessage(HttpMethod.Get, query);
@@ -58,7 +60,7 @@ namespace TweetSearch.Core
         // Save the corresponding tweets list to file
         private void ProcessResponse(RequestData requestData, Response response)
         {
-            PastSearchesEntry entry = new PastSearchesEntry();
+            PastSearchesEntry entry = new();
             entry.query = requestData.query;
             entry.hasImages = requestData.hasImages;
             entry.dateTime = DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss");
@@ -70,7 +72,7 @@ namespace TweetSearch.Core
 
             string entryTweets = JsonSerializer.Serialize(response.data);
             string entryFilePath = EntryTweetsFilePath(entry);
-            using StreamWriter sw = new StreamWriter(entryFilePath, false);
+            using StreamWriter sw = new(entryFilePath, false);
             sw.Write(entryTweets);
 
         }
@@ -85,44 +87,52 @@ namespace TweetSearch.Core
 
         // Update the past searches list with the new entry
         // Remove oldest entry if the list already has 10 elements
-        // Deserializing as a Queue for convenience
         private void RegisterNewSearchesEntry(PastSearchesEntry entry)
         {
-            Queue<PastSearchesEntry> pastSearches = new();
-            string filePath = pastSearchesFilePath;
-
-            // Get the existing past searches list if there is one
+            List<PastSearchesEntry> pastSearches = GetPastSearchesList();
             
-            string pastSearchesOld = GetPastSearchesString();
-            if (pastSearchesOld != "")
-                pastSearches = JsonSerializer.Deserialize<Queue<PastSearchesEntry>>(pastSearchesOld)!;
-            
-
             // Remove oldest entry if there are 10 entries already
             if (pastSearches.Count == 10)
             {
-                PastSearchesEntry oldestEntry = pastSearches.Dequeue();
+                PastSearchesEntry oldestEntry = pastSearches[9];
+                pastSearches.Remove(oldestEntry);
                 RemovePastSearchesEntryFile(oldestEntry);
             }
 
             // Register the new entry and save the new past searches list to the file
-            pastSearches.Enqueue(entry);
-            string _pastSearches = JsonSerializer.Serialize(pastSearches);
-            using StreamWriter sw = new StreamWriter(filePath, false);
-            sw.Write(_pastSearches);
+            pastSearches.Insert(0, entry);
+
+            SavePastSearchesListToFile(pastSearches);
         }
 
-        // Read the existing, serialized past searches list from the file
-        private string GetPastSearchesString()
+        // GET /tweets
+        public string GetPastSearchesSerialized()
         {
-            string filePath = pastSearchesFilePath;
-            FileInfo fi = new FileInfo(filePath);
+            FileInfo fi = new(pastSearchesFilePath);
             if (!fi.Exists)
-                return "";
+                return "{}";
 
-            using StreamReader sr = new StreamReader(filePath);
+            using StreamReader sr = new(pastSearchesFilePath);
             string pastSearchesString = sr.ReadToEnd();
             return pastSearchesString;
+        }
+
+        // Get the serialized past searches list and deserialize
+        private List<PastSearchesEntry> GetPastSearchesList()
+        {
+            string pastSearchesString = GetPastSearchesSerialized();
+
+            List<PastSearchesEntry> pastSearches = JsonSerializer.Deserialize<List<PastSearchesEntry>>(pastSearchesString)!;
+            return pastSearches;
+        }
+
+        // serialize and save the past searches list to file
+        private void SavePastSearchesListToFile(List<PastSearchesEntry> pastSearches)
+        {
+            string _pastSearches = JsonSerializer.Serialize(pastSearches);
+            using StreamWriter sw = new(pastSearchesFilePath, false);
+            sw.Write(_pastSearches);
+
         }
 
         // Remove the tweets file of a given entry
@@ -133,13 +143,29 @@ namespace TweetSearch.Core
             fi.Delete();
         }
 
-        public PastSearchesEntry GetPastSearchesEntryByIndex(int ind)
+        private PastSearchesEntry GetPastSearchesEntryByIndex(int ind)
         {
-            string _pastSearches = GetPastSearchesString();
-            List<PastSearchesEntry> pastSearches = JsonSerializer.Deserialize<List<PastSearchesEntry>>(_pastSearches)!;
-            PastSearchesEntry entry = pastSearches[ind];
-            return entry;
+            List<PastSearchesEntry> pastSearches = GetPastSearchesList();
+            return pastSearches[ind];
         }
 
+        // GET /tweets/id
+        // Get the serialized tweets list corresponding to the given entry
+        public string GetPastSearchesEntryTweetsByIndex(int ind)
+        {
+            PastSearchesEntry entry = GetPastSearchesEntryByIndex(ind);
+            string filePath = EntryTweetsFilePath(entry);
+            using StreamReader sr = new(filePath);
+            return sr.ReadToEnd();
+        }
+
+        // DELETE /tweets/id
+        public void RemovePastSearchesEntryByIndex(int ind)
+        {
+            PastSearchesEntry entry = GetPastSearchesEntryByIndex(ind);
+            List<PastSearchesEntry> pastSearches = GetPastSearchesList();
+            pastSearches.Remove(entry);
+            RemovePastSearchesEntryFile(entry);
+        }
     }
 }
