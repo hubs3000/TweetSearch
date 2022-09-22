@@ -2,19 +2,19 @@
 using Microsoft.AspNetCore.Mvc;
 using TweetSearch.Models;
 using TweetSearch.Core;
+using System.Text.Json;
 
 namespace TweetSearch.Controllers
 {
     [Route("[controller]")]
-    [ApiController]
     public class TweetsController : ControllerBase
     {
         TweetCode tc = new();
 
         [HttpPost]
-        public async Task<string> HandleRequest([FromBody] RequestData requestData)
+        public string HandleRequest([FromBody] RequestData requestData)
         {
-            string result = await tc.ProcessRequest(requestData);
+            string result = tc.ProcessRequest(requestData);
             return result;
         }
 
@@ -25,11 +25,17 @@ namespace TweetSearch.Controllers
             return result;
         }
 
-        [HttpGet("id:int")]
-        public string GetTweetsListByIndex(int id)
+        [HttpGet("{ind:int}")]
+        public string GetTweetsListByIndex(int ind)
         {
-            string result = tc.GetPastSearchesEntryTweetsByIndex(id);
+            string result = tc.GetPastSearchesEntryTweetsByIndex(ind);
             return result;
+        }
+
+        [HttpDelete("{ind:int}")]
+        public void RemovePastSearchesEntryByIndex(int ind)
+        {
+            tc.RemovePastSearchesEntryByIndex(ind);
         }
     }
 }

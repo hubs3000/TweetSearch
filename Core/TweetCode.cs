@@ -11,19 +11,30 @@ namespace TweetSearch.Core
         private readonly string pastSearchesFilePath = "PastSearches\\PastSearches.txt";
 
         // POST /tweets 
-        public async Task<string> ProcessRequest(RequestData requestData)
+        public string ProcessRequest(RequestData requestData)
         {
             string query = BuildQuery(requestData);
-            string responseString = await SendRequest(query);
+            string responseString = SendRequest(query).Result;
 
-            if (responseString == "")
-                return "";
+            if (responseString == "[]")
+            {
+                Console.WriteLine("null response");
+                return "[]";
+            }
 
             Response response = JsonSerializer.Deserialize<Response>(responseString)!;
 
             ProcessResponse(requestData, response);
 
-            return "ok";
+            if (response.meta.result_count == 0)
+            {
+                Console.WriteLine("No results");
+                return "[]";
+            }
+
+            string result = JsonSerializer.Serialize(response.data);
+
+            return result;
         }
 
         // Build the search query to be sent to Twitter
@@ -48,10 +59,13 @@ namespace TweetSearch.Core
 
             if (!response.IsSuccessStatusCode)
             {
-                return "";
+                Console.WriteLine("http request unsuccessful");
+                return "[]";
             }
 
             string result = await response.Content.ReadAsStringAsync();
+
+            Console.WriteLine(result);
 
             return result;
         }
@@ -60,7 +74,7 @@ namespace TweetSearch.Core
         // Save the corresponding tweets list to file
         private void ProcessResponse(RequestData requestData, Response response)
         {
-            PastSearchesEntry entry = new();
+            PastSearchesEntry entry = new PastSearchesEntry();
             entry.query = requestData.query;
             entry.hasImages = requestData.hasImages;
             entry.dateTime = DateTime.Now.ToString("yyyy.MM.dd-HH.mm.ss");
@@ -70,13 +84,15 @@ namespace TweetSearch.Core
 
             RegisterNewSearchesEntry(entry);
 
-            string entryTweets = JsonSerializer.Serialize(response.data);
+            var _options = new JsonSerializerOptions { WriteIndented = true };
+            string entryTweets = JsonSerializer.Serialize(response.data, _options);
             string entryFilePath = EntryTweetsFilePath(entry);
             using StreamWriter sw = new(entryFilePath, false);
             sw.Write(entryTweets);
 
         }
 
+        // The filepath of a tweets list corresponding to the given entry
         private string EntryTweetsFilePath(PastSearchesEntry entry)
         {
             string filePath = "PastSearches\\";
@@ -90,7 +106,9 @@ namespace TweetSearch.Core
         private void RegisterNewSearchesEntry(PastSearchesEntry entry)
         {
             List<PastSearchesEntry> pastSearches = GetPastSearchesList();
-            
+
+            string pastSearchesString = JsonSerializer.Serialize(pastSearches);
+
             // Remove oldest entry if there are 10 entries already
             if (pastSearches.Count == 10)
             {
@@ -110,7 +128,7 @@ namespace TweetSearch.Core
         {
             FileInfo fi = new(pastSearchesFilePath);
             if (!fi.Exists)
-                return "{}";
+                return "[]";
 
             using StreamReader sr = new(pastSearchesFilePath);
             string pastSearchesString = sr.ReadToEnd();
@@ -129,7 +147,8 @@ namespace TweetSearch.Core
         // serialize and save the past searches list to file
         private void SavePastSearchesListToFile(List<PastSearchesEntry> pastSearches)
         {
-            string _pastSearches = JsonSerializer.Serialize(pastSearches);
+            var _options = new JsonSerializerOptions { WriteIndented = true };
+            string _pastSearches = JsonSerializer.Serialize(pastSearches, _options);
             using StreamWriter sw = new(pastSearchesFilePath, false);
             sw.Write(_pastSearches);
 
@@ -154,18 +173,22 @@ namespace TweetSearch.Core
         public string GetPastSearchesEntryTweetsByIndex(int ind)
         {
             PastSearchesEntry entry = GetPastSearchesEntryByIndex(ind);
+
             string filePath = EntryTweetsFilePath(entry);
             using StreamReader sr = new(filePath);
-            return sr.ReadToEnd();
+            string result = sr.ReadToEnd();
+            return result;
         }
 
         // DELETE /tweets/id
+        // Delete a past searches list entry and its tweets list file
         public void RemovePastSearchesEntryByIndex(int ind)
         {
-            PastSearchesEntry entry = GetPastSearchesEntryByIndex(ind);
             List<PastSearchesEntry> pastSearches = GetPastSearchesList();
-            pastSearches.Remove(entry);
+            PastSearchesEntry entry = pastSearches[ind];
+            pastSearches.RemoveAt(ind);
             RemovePastSearchesEntryFile(entry);
+            SavePastSearchesListToFile(pastSearches);
         }
     }
 }

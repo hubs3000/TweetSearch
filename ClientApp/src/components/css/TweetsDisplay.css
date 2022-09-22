@@ -1,0 +1,20 @@
+﻿.tweets {
+    display:flex;
+    justify-content: center;
+    align-content: center;
+    width: 100%;
+}
+
+.tweets > div {
+    margin: 0.5%;
+    width: 10%;
+}
+
+.side-panel {
+    filter: blur(2px);
+    cursor: pointer;
+}
+
+.side-panel > * {
+    pointer-events: none;
+}
