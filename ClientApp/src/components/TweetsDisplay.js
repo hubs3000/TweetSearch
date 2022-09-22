@@ -14,9 +14,6 @@ export class TweetsDisplay extends Component {
         if (x >= 0 && x + this.state.tweetsOnScreen <= this.props.tweetsList.length) {
             this.revertPanelChange();
             this.props.handleIteratorChange(x);
-
-            let myDiv = document.getElementById("tweets");
-            console.log(myDiv.style.cssText);
         }
     }
 

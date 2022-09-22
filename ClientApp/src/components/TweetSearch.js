@@ -51,7 +51,6 @@ export class TweetSearch extends Component {
 
     // GET /tweets/{ind}
     getTweetsByIndex = async (ind) => {
-        console.log("getTweetsByIndex, TweetSearch: " + ind)
         const response = await fetch(this.props.url + '/' + ind);
         const data = await response.json();
         this.setState({
