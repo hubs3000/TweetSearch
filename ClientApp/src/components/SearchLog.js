@@ -1,7 +1,7 @@
 ﻿import React, { Component } from 'react';
-import './css/PastSearchesBar.css';
+import './css/SearchLog.css';
 
-export class PastSearchesBar extends Component {
+export class SearchLog extends Component {
     constructor(props) {
         super(props);
         this.state = {
@@ -15,10 +15,10 @@ export class PastSearchesBar extends Component {
 
     render() {
 
-        let entriesBar; 
+        let entriesBar;
 
         if (this.state.isToggled) {
-            entriesBar = 
+            entriesBar =
                 <div className="entries">
                     {this.props.children}
                 </div>
@@ -26,7 +26,7 @@ export class PastSearchesBar extends Component {
 
         return (
             <div>
-                <h1 className="header" onClick={this.toggleEntriesBar}>PAST SEARCHES</h1>
+                <h1 className="header" onClick={this.toggleEntriesBar}>SEARCH LOG</h1>
                 {entriesBar}
             </div>
 

@@ -14,6 +14,10 @@ export class SearchBar extends Component {
 
     initiateSearch(e) {
         e.preventDefault();
+        if (this.state.query === "") {
+            alert("Can not send an empty search query");
+            return;
+        }
         const pattern1 = new RegExp('[^A-Za-z0-9 ]');
         const pattern2 = new RegExp('[A-Z-a-z0-9]');
         if (pattern1.test(this.state.query)) {

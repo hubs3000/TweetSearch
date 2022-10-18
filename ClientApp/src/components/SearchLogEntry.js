@@ -1,7 +1,7 @@
 ﻿import React, { Component } from 'react';
-import './css/PastSearchesEntry.css';
+import './css/SearchLogEntry.css';
 
-export class PastSearchesEntry extends Component {
+export class SearchLogEntry extends Component {
     constructor(props) {
         super(props);
     }

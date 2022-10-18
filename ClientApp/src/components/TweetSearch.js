@@ -2,22 +2,104 @@
 import './css/TweetSearch.css';
 import { SearchBar } from './SearchBar';
 import { TweetsDisplay } from './TweetsDisplay';
-import { PastSearchesBar } from './PastSearchesBar';
-import { PastSearchesEntry } from './PastSearchesEntry';
+import { SearchLog } from './SearchLog';
+import { SearchLogEntry } from './SearchLogEntry';
 
 export class TweetSearch extends Component {
     constructor(props) {
         super(props);
         this.state = {
             tweetsList: [],
-            pastSearchesList: [],
+            searchLog: [],
             iterator: 0
         };
     }
 
+    clearData = () => {
+        localStorage.clear();
+        this.setState({
+            iterator: 0,
+            searchLog: [],
+            tweetsList: []
+        });
+    }
+
+    // Form the key for local storage processing of a tweets list
+    formKey(searchLogEntry) {
+        return `${searchLogEntry.dateTime}-${searchLogEntry.query}`;
+    }
+
+    // Update the search log in local storage to the current state
+    updateSearchLogStorage = () => {
+        const logString = JSON.stringify(this.state.searchLog);
+        localStorage.setItem("searchLog", logString);
+    }
+    // Remove the given entry
+    removeEntryByIndex = (ind) => {
+        let log = this.state.searchLog;
+        const entry = log[ind];
+        localStorage.removeItem(this.formKey(entry));
+        log.splice(ind, 1);
+        this.setState({
+            searchLog: log
+        });
+        this.updateSearchLogStorage();
+    }
+
+    // Set the tweets list to one corresponding to the given entry
+    getTweetsByIndex = (ind) => {
+        const entry = this.state.searchLog[ind];
+        const tweetsString = localStorage.getItem(this.formKey(entry));
+        const tweets = JSON.parse(tweetsString);
+        this.setState({
+            tweetsList: tweets,
+            iterator: 0
+        });
+    }
+    // Process the data from POST response
+    // Update the search log with new meta data entry
+    // Put the new tweets list in browser's local storage
+    processSearchData = (searchData) => {
+        let log = this.state.searchLog;
+        const entry = searchData.meta;
+        const tweets = searchData.tweets;
+
+        if (log.length >= 10) {
+            const oldestEntry = log.pop();
+            localStorage.removeItem(this.formKey(oldestEntry));
+        }
+
+        log.unshift(entry);
+        localStorage.setItem(this.formKey(entry), JSON.stringify(tweets));
+
+        this.setState({
+            searchLog: log,
+            tweetsList: tweets,
+            iterator: 0
+        });
+
+        this.updateSearchLogStorage();
+    }
+
+    // NOT FINISHED
+    startSetup = () => {
+        const logString = localStorage.getItem("searchLog");
+        if (logString === null)
+            return;
+
+        const log = JSON.parse(logString);
+        //if (log.length > 0) {
+        //    this.getTweetsByIndex(0);
+        //}
+
+        this.setState({
+            searchLog: log
+        });
+    }
+
     // Startup setup
     componentDidMount() {
-        this.getPastSearchesList();
+        this.startSetup();
     }
 
     // Set the iterator value
@@ -28,7 +110,7 @@ export class TweetSearch extends Component {
 
     // POST /tweets
     // Send request data to TweetsController
-    // Receive 
+    // Receive tweets list
     postSearchRequest = async (requestData) => {
         const response = await fetch(this.props.url, {
             method: 'POST',
@@ -38,54 +120,28 @@ export class TweetSearch extends Component {
             body: JSON.stringify(requestData)
         });
         if (!response.ok) {
-            alert("Search unsuccessful");
+            alert(`Search unsuccessful: ${response.status}`);
             return;
         }
         const data = await response.json();
-        this.setState({
-            tweetsList: data,
-            iterator: 0
-        });
-        await this.getPastSearchesList();
+
+        this.processSearchData(data);
     }
 
-    // GET /tweets/{ind}
-    getTweetsByIndex = async (ind) => {
-        const response = await fetch(this.props.url + '/' + ind);
-        const data = await response.json();
-        this.setState({
-            tweetsList: data,
-            iterator: 0
-        });
-    }
-
-    // GET /tweets
-    getPastSearchesList = async () => {
-        const response = await fetch(this.props.url);
-        const data = await response.json();
-        this.setState({ pastSearchesList: data });
-    }
-
-    // DELETE /tweets/{ind}
-    removePastSearchesEntryByIndex = async (ind) => {
-        await fetch(this.props.url + '/' + ind, {
-            method: 'DELETE'
-        });
-        await this.getPastSearchesList();
-    }
+    
 
     render() {
 
-        const pastSearchesList = this.state.pastSearchesList.map(
+        const searchLogEntries = this.state.searchLog.map(
             (item) => {
                 return (
-                    <PastSearchesEntry
+                    <SearchLogEntry
                         key={item.dateTime}
                         entry={item}
-                        index={this.state.pastSearchesList.indexOf(item)}
+                        index={this.state.searchLog.indexOf(item)}
                         repeatSearch={this.postSearchRequest}
                         getTweetsByIndex={this.getTweetsByIndex}
-                        removeEntry={this.removePastSearchesEntryByIndex}
+                        removeEntry={this.removeEntryByIndex}
                     />
                     )
             }
@@ -97,9 +153,12 @@ export class TweetSearch extends Component {
                     initiateSearch={this.postSearchRequest}
                 />
 
-                <PastSearchesBar>
-                    {pastSearchesList}
-                </PastSearchesBar>
+                <br />
+                <button onClick={this.clearData}>Clear Data</button>
+
+                <SearchLog>
+                    {searchLogEntries}
+                </SearchLog>
 
                 <TweetsDisplay
                     handleIteratorChange={this.handleIteratorChange}

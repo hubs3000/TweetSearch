@@ -78,6 +78,8 @@ export class TweetsDisplay extends Component {
         document.body.appendChild(script);
 
         this.changePanels();
+
+        
     }
 
 
@@ -93,12 +95,11 @@ export class TweetsDisplay extends Component {
                 )
             }
         );
-
-        if (tweetsList.length === 0)
-            tweetsList.push(<p>No tweets to display</p>);
+        
+            
         
         const sliderMin = 3;
-        const sliderMax = 8;
+        const sliderMax = 9;
 
         let sliderMarks = [];
         for (let i = sliderMin; i <= sliderMax; i++) {
@@ -106,26 +107,45 @@ export class TweetsDisplay extends Component {
             sliderMarks.push(opt);
         };
 
+        //let noTweets = document.getElementById("noTweets");
+        //let slider = document.getElementById("slider");
+        //if (this.props.tweetsList.length === 0) {
+        //    if (slider != null)
+        //        slider.style.display = "none";
+        //    if (noTweets != null)
+        //        noTweets.style.display = "block";
+        //    console.log('No tweets');
+        //}
+        //else {
+        //    slider.style.display = "block";
+        //    noTweets.style.display = "none";
+        //    console.log('Got tweets');
+        //}
+
+        let slider = <div id="slider">
+                        <label htmlFor="tweets-on-screen">Tweets on display: {this.state.tweetsOnScreen}</label> <br />
+                        <input
+                            id="tweets-on-screen"
+                            type="range"
+                            value={this.state.tweetsOnScreen}
+                            min={sliderMin}
+                            max={sliderMax}
+                            onInput={this.handleSliderChange}
+                            list="slider-marks"
+                        />
+                        <datalist id="slider-marks">
+                            {sliderMarks}
+                        </datalist>
+
+        </div>;
+
+        let noTweets = <p id="noTweets">No tweets to display</p>;
+
         return (
             <div>
                 <h1 className="header">TWEETS</h1>
 
-                <div id="slider">
-                    <label htmlFor="tweets-on-screen">Tweets on display: {this.state.tweetsOnScreen}</label> <br/>
-                    <input
-                        id="tweets-on-screen"
-                        type="range"
-                        value={this.state.tweetsOnScreen}
-                        min={sliderMin}
-                        max={sliderMax}
-                        onInput={this.handleSliderChange}
-                        list="slider-marks"
-                    />
-                    <datalist id="slider-marks">
-                        {sliderMarks}
-                    </datalist>
-
-                </div>
+                {tweetsList.length > 0 ? slider : noTweets}
                 
                 <div className="tweets" id="tweets">
                     {tweetsList.slice(this.props.iterator, this.props.iterator + this.state.tweetsOnScreen)}
