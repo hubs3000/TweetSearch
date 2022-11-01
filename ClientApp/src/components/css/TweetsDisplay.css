@@ -6,12 +6,12 @@
 }
 
 .tweets > div {
-    margin: 0.5%;
+    margin: 0.3%;
     width: 10%;
 }
 
 .side-panel {
-    filter: blur(2px);
+    filter: blur(4px);
     cursor: pointer;
 }
 

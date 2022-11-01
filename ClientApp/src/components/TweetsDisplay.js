@@ -30,7 +30,6 @@ export class TweetsDisplay extends Component {
         if (this.props.iterator + newValue > this.props.tweetsList.length)
             return;
 
-        this.revertPanelChange();
         this.setState({ tweetsOnScreen: newValue });
     }
 
@@ -56,31 +55,24 @@ export class TweetsDisplay extends Component {
 
     revertPanelChange = () => {
         let myDiv = document.getElementById("tweets");
-        let first = myDiv.firstElementChild;
-        let last = myDiv.lastElementChild;
-
-        if (first !== null) {
-            first.className = "";
-            last.className = "";
-
-
-            first.removeEventListener("click", this.itrDown);
-            last.removeEventListener("click", this.itrUp);
+        for (const child of myDiv.children) {
+            child.className = "";
+            child.removeEventListener("click", this.itrDown);
+            child.removeEventListener("click", this.itrUp);
         }
     }
 
-    
-
     componentDidUpdate() {
+        this.revertPanelChange();
+
         const script = document.createElement('script');
         script.src = "//platform.twitter.com/widgets.js";
         script.async = true;
         document.body.appendChild(script);
 
         this.changePanels();
-
-        
     }
+
 
 
     render() {
@@ -96,8 +88,6 @@ export class TweetsDisplay extends Component {
             }
         );
         
-            
-        
         const sliderMin = 3;
         const sliderMax = 9;
 
@@ -106,21 +96,6 @@ export class TweetsDisplay extends Component {
             let opt = <option key={i} value={i} label={i}/>;
             sliderMarks.push(opt);
         };
-
-        //let noTweets = document.getElementById("noTweets");
-        //let slider = document.getElementById("slider");
-        //if (this.props.tweetsList.length === 0) {
-        //    if (slider != null)
-        //        slider.style.display = "none";
-        //    if (noTweets != null)
-        //        noTweets.style.display = "block";
-        //    console.log('No tweets');
-        //}
-        //else {
-        //    slider.style.display = "block";
-        //    noTweets.style.display = "none";
-        //    console.log('Got tweets');
-        //}
 
         let slider = <div id="slider">
                         <label htmlFor="tweets-on-screen">Tweets on display: {this.state.tweetsOnScreen}</label> <br />
@@ -151,8 +126,6 @@ export class TweetsDisplay extends Component {
                     {tweetsList.slice(this.props.iterator, this.props.iterator + this.state.tweetsOnScreen)}
                 </div>
             </div>
-
-            
 
         );
     }

@@ -9,7 +9,7 @@ export class Tweet extends Component {
         return (
             <div id={tweetId} >
                 <blockquote className="twitter-tweet">
-                    <a href={tweetAddress}>{tweetId}</a>
+                    <a href={tweetAddress}>Loading...<br/>{tweetId}</a>
                 </blockquote>
             </div>
 
