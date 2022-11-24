@@ -34,6 +34,7 @@ export class TweetSearch extends Component {
         const logString = JSON.stringify(this.state.searchLog);
         localStorage.setItem("searchLog", logString);
     }
+
     // Remove the given entry
     removeEntryByIndex = (ind) => {
         let log = this.state.searchLog;
@@ -81,16 +82,11 @@ export class TweetSearch extends Component {
         this.updateSearchLogStorage();
     }
 
-    // NOT FINISHED
+    // Get search log data from local storage
     startSetup = () => {
         const logString = localStorage.getItem("searchLog");
         if (logString === null)
             return;
-
-        const log = JSON.parse(logString);
-        //if (log.length > 0) {
-        //    this.getTweetsByIndex(0);
-        //}
 
         this.setState({
             searchLog: log
